@@ -109,16 +109,19 @@ public:
 		bool verify(const void *const *msgVec, const size_t *sizeVec, const PublicKey *pubVec, size_t n) const
 		{
 			if (n == 0) return false;
-			typedef std::set<Fp> FpSet;
-			FpSet msgSet;
+			// typedef std::set<Fp> FpSet;
+			// FpSet msgSet;
 			typedef std::vector<G1> G1Vec;
 			G1Vec hv(n);
 			for (size_t i = 0; i < n; i++) {
+                /*
+
 				Fp h;
 				h.setHashOf(msgVec[i], sizeVec[i]);
 				std::pair<typename FpSet::iterator, bool> ret = msgSet.insert(h);
 				if (!ret.second) throw cybozu::Exception("aggs::verify:same msg");
-				mapToG1(hv[i], h);
+                */
+				hashAndMapToG1(hv[i], msgVec[i], sizeVec[i]);
 			}
 			/*
 				e(aggSig, xQ) = prod_i e(hv[i], pub[i].Q)

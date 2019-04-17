@@ -544,6 +544,33 @@ struct MapTo {
 		assert(P.isValid());
 		return b;
 	}
+	bool calcG1(G1& P, const void *buf, size_t bufSize) const
+	{
+		if (useNaiveMapTo_) {
+			Fp t;
+			t.setHashOf(buf, bufSize);
+			bool b = calcG1(P, t);
+			// It will not happen that the hashed value is equal to special value
+			assert(b);
+			return b;
+		}
+
+		unsigned char h1[3] = "h1";
+		unsigned char h2[3] = "h2";
+		unsigned char counter = 0;
+		G1 p1, p2;
+		P.clear();
+		while (P.isZero()) {
+			h1[2] = h2[2] = counter;
+			p1.clear();
+			p2.clear();
+			// check error
+			swEncode(p1, buf, bufSize, h1, 3);
+			swEncode(p2, buf, bufSize, h2, 3);
+			G1::add(P, p1, p2);
+			counter += (unsigned char)1;
+		}
+	}
 	bool calcG1(G1& P, const Fp& t) const
 	{
 		if (useNaiveMapTo_) {
@@ -2145,21 +2172,7 @@ inline void mapToG2(G2& P, const Fp2& x)
 #endif
 inline void hashAndMapToG1(G1& P, const void *buf, size_t bufSize)
 {
-	unsigned char h1[3] = "h1";
-	unsigned char h2[3] = "h2";
-	unsigned char counter = 0;
-	G1 p1, p2;
-	P.clear();
-	while (P.isZero()) {
-		h1[2] = h2[2] = counter;
-		p1.clear();
-		p2.clear();
-		// check error
-		BN::param.mapTo.swEncode(p1, buf, bufSize, h1, 3);
-		BN::param.mapTo.swEncode(p2, buf, bufSize, h2, 3);
-		G1::add(P, p1, p2);
-		counter += (unsigned char)1;
-	}
+	BN::param.mapTo.calcG1(P, buf, bufSize);
 }
 /*
 inline void hashAndMapToG1(G1& P, const void *buf, size_t bufSize)
