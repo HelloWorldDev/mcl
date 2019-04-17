@@ -528,7 +528,7 @@ struct MapTo {
 
 		// hash the concatenated msg into Fp
 		Fp t;
-		t.setHashOf(m, bufSize+postfixSize);
+		t.setHashOfMod(m, bufSize+postfixSize);
 
 		// TODO handle error
 		bool b = calcBN<G1, Fp>(P, t);

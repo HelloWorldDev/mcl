@@ -368,6 +368,19 @@ public:
 		uint32_t size = op_.hash(buf, static_cast<uint32_t>(sizeof(buf)), msg, static_cast<uint32_t>(msgSize));
 		setArrayMask(buf, size);
 	}
+	void setHashOfMod(const void *msg, size_t msgSize)
+	{
+		char buf[MCL_MAX_HASH_BIT_SIZE / 8];
+		uint32_t size = op_.hash(buf, static_cast<uint32_t>(sizeof(buf)), msg, static_cast<uint32_t>(msgSize));
+		// big endian
+		for(uint32_t i = 0; i < size / 2; ++i) {
+			char c = buf[i];
+			buf[i] = buf[size-i-1];
+			buf[size-i-1] = c;
+		}
+		bool b;
+		setArray(&b, buf, size, fp::Mod);
+	}
 	void getMpz(bool *pb, mpz_class& x) const
 	{
 		fp::Block b;
