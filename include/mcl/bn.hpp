@@ -519,6 +519,31 @@ struct MapTo {
 			initBLS12(z);
 		}
 	}
+	bool swEncode(G1& P, const void *buf, size_t bufSize, const void *postfix, size_t postfixSize) const
+	{
+		// concatenate the msg and postfix
+		unsigned char *m = (unsigned char*)malloc(bufSize + postfixSize);
+		memcpy(m, buf, bufSize);
+		memcpy(m+bufSize, postfix, postfixSize);
+
+		// hash the concatenated msg into Fp
+		Fp t;
+		t.setHashOf(m, bufSize+postfixSize);
+
+		// TODO handle error
+		bool b = calcBN<G1, Fp>(P, t);
+		free(m);
+		switch (type_) {
+		case BNtype:
+			// no subgroup
+			break;
+		case BLS12type:
+			mulByCofactorBLS12(P, P);
+			break;
+		}
+		assert(P.isValid());
+		return b;
+	}
 	bool calcG1(G1& P, const Fp& t) const
 	{
 		if (useNaiveMapTo_) {
@@ -2120,6 +2145,25 @@ inline void mapToG2(G2& P, const Fp2& x)
 #endif
 inline void hashAndMapToG1(G1& P, const void *buf, size_t bufSize)
 {
+	unsigned char h1[3] = "h1";
+	unsigned char h2[3] = "h2";
+	unsigned char counter = 0;
+	G1 p1, p2;
+	P.clear();
+	while (P.isZero()) {
+		h1[2] = h2[2] = counter;
+		p1.clear();
+		p2.clear();
+		// check error
+		BN::param.mapTo.swEncode(p1, buf, bufSize, h1, 3);
+		BN::param.mapTo.swEncode(p2, buf, bufSize, h2, 3);
+		G1::add(P, p1, p2);
+		counter += (unsigned char)1;
+	}
+}
+/*
+inline void hashAndMapToG1(G1& P, const void *buf, size_t bufSize)
+{
 	Fp t;
 	t.setHashOf(buf, bufSize);
 	bool b;
@@ -2128,6 +2172,7 @@ inline void hashAndMapToG1(G1& P, const void *buf, size_t bufSize)
 	assert(b);
 	(void)b;
 }
+*/
 inline void hashAndMapToG2(G2& P, const void *buf, size_t bufSize)
 {
 	Fp2 t;
